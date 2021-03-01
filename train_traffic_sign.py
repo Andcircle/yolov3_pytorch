@@ -51,7 +51,7 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     print(opt)
 
-    logger = Logger(opt.logdir)
+    logger = Logger(opt.logdir, colab=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # device = torch.device('cpu')
@@ -69,10 +69,18 @@ if __name__ == "__main__":
     model = Darknet(opt.model_def).to(device)
     model.apply(weights_init_normal)
 
+    optimizer = torch.optim.Adam(model.parameters())
+
+    epoch_start=0
     # If specified we start from checkpoint
     if opt.pretrained_weights:
         if opt.pretrained_weights.endswith(".pth"):
-            model.load_state_dict(torch.load(opt.pretrained_weights))
+            # model.load_state_dict(torch.load(opt.pretrained_weights))
+            checkpoint = torch.load(opt.pretrained_weights)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            epoch_start = checkpoint['epoch']
+            loss = checkpoint['loss']
         else:
             model.load_darknet_weights(opt.pretrained_weights)
 
@@ -96,8 +104,6 @@ if __name__ == "__main__":
         collate_fn=val_dataset.collate_fn
     )
 
-    optimizer = torch.optim.Adam(model.parameters())
-
     metrics = [
         "grid_size",
         "loss",
@@ -115,7 +121,7 @@ if __name__ == "__main__":
         "conf_noobj",
     ]
 
-    for epoch in range(opt.epochs):
+    for epoch in range(epoch_start, opt.epochs):
         model.train()
         start_time = time.time()
         for batch_i, (img_paths, imgs, targets) in enumerate(tqdm.tqdm(train_dataloader, desc=f"Training Epoch {epoch}")):
@@ -229,4 +235,9 @@ if __name__ == "__main__":
                 print( "---- mAP not measured (no detections found by model)")
 
         if epoch % opt.checkpoint_interval == 0:
-            torch.save(model.state_dict(), f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
+            # torch.save(model.state_dict(), f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
+
+            torch.save({'epoch': epoch,
+                        'model_state_dict': model.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict(),
+                        'loss': loss}, f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
