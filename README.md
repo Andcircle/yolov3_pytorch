@@ -1,4 +1,4 @@
-** Originally from https://github.com/eriklindernoren/PyTorch-YOLOv3, retrained to detect and recognize traffic sign**
+## Originally from https://github.com/eriklindernoren/PyTorch-YOLOv3, retrained to detect and recognize traffic sign
 
 
 # PyTorch-YOLOv3
