@@ -1,4 +1,4 @@
-**WARNING: This repository has gone stale as I unfortunately do not have the time to maintain it anymore. If you would like to continue the development of it as a collaborator send me an email at eriklindernoren@gmail.com.**
+** Originally from https://github.com/eriklindernoren/PyTorch-YOLOv3, retrained to detect and recognize traffic sign**
 
 
 # PyTorch-YOLOv3
