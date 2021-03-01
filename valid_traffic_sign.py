@@ -6,6 +6,7 @@ from utils.datasets import *
 from utils.augmentations import *
 from utils.transforms import *
 from utils.parse_config import *
+import detect
 
 import os
 import sys
@@ -21,25 +22,15 @@ from torchvision import transforms
 from torch.autograd import Variable
 import torch.optim as optim
 
-def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size):
+def evaluate(model, dataloader, iou_thres, conf_thres, nms_thres, img_size, batch_size, class_names):
     model.eval()
 
-    # Get dataloader
-    dataset = ListDataset(path, img_size=img_size, multiscale=False, transform=DEFAULT_TRANSFORMS)
-    dataloader = torch.utils.data.DataLoader(
-        dataset, 
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=1,
-        collate_fn=dataset.collate_fn
-    )
-
-    # Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
-    Tensor = torch.FloatTensor
+    Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
+    # Tensor = torch.FloatTensor
 
     labels = []
     sample_metrics = []  # List of tuples (TP, confs, pred)
-    for batch_i, (_, imgs, targets) in enumerate(tqdm.tqdm(dataloader, desc="Detecting objects")):
+    for batch_i, (img_paths, imgs, targets) in enumerate(tqdm.tqdm(dataloader, desc="Detecting objects")):
         
         if targets is None:
             continue
@@ -60,12 +51,29 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
     
     if len(sample_metrics) == 0:  # no detections over whole validation set.
         return None
+
+    # Visualization per epoch
+    image = np.transpose(imgs[0].to('cpu'), (1,2,0)) #np.array(Image.open(img_paths[0]))
+    # Extract labels
+    label = targets[targets[:,0]==0][:,1:]
+
+    image_label=detect.visualize_label(image, label, img_size, class_names)
+    image_detection=detect.visualize_detection(image, outputs[0], img_size, class_names)
+
+    # output_path = os.path.join('output', 'label_epoch{}_batch{}.jpg'.format(epoch, batch_i))
+    # cv2.imwrite(output_path, image_label)
+    # output_path = os.path.join('output', 'detection_epoch{}_batch{}.jpg'.format(epoch, batch_i))
+    # cv2.imwrite(output_path, image_detection)
+
+    # logger.image_summary('ground_truth_img', image_label, batches_done)
+    # logger.image_summary('prediction_img', image_detection, batches_done)
+
     
     # Concatenate sample statistics
     true_positives, pred_scores, pred_labels = [np.concatenate(x, 0) for x in list(zip(*sample_metrics))]
     precision, recall, AP, f1, ap_class = ap_per_class(true_positives, pred_scores, pred_labels, labels)
 
-    return precision, recall, AP, f1, ap_class
+    return precision, recall, AP, f1, ap_class, image_detection, image_label
 
 
 if __name__ == "__main__":
@@ -83,8 +91,8 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     print(opt)
 
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    device = torch.device("cpu") 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cpu") 
 
     data_config = parse_data_config(opt.data_config)
     valid_path = data_config["valid"]

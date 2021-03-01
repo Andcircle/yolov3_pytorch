@@ -20,3 +20,7 @@ class Logger(object):
         """Log scalar variables."""
         for tag, value in tag_value_pairs:
             self.writer.add_scalar(tag, value, step)
+
+    def image_summary(self, tag, image, step):
+        """Log image variables."""
+        self.writer.add_image(tag, image, step, dataformats='HWC')

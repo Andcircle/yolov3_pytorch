@@ -23,10 +23,11 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.ticker import NullLocator
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_folder", type=str, default="data/samples", help="path to dataset")
+    parser.add_argument("--image_folder", type=str, default="data/samples_li/image/train", help="path to dataset")
     parser.add_argument("--model_def", type=str, default="config/yolov3.cfg", help="path to model definition file")
     parser.add_argument("--weights_path", type=str, default="weights/yolov3.weights", help="path to weights file")
     parser.add_argument("--class_path", type=str, default="data/coco.names", help="path to class label file")
@@ -40,6 +41,7 @@ if __name__ == "__main__":
     print(opt)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cpu")
 
     os.makedirs("output", exist_ok=True)
 
@@ -66,6 +68,7 @@ if __name__ == "__main__":
     classes = load_classes(opt.class_path)  # Extracts class labels from file
 
     Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
+    # Tensor = torch.FloatTensor
 
     imgs = []  # Stores image paths
     img_detections = []  # Stores detections for each image index
@@ -144,3 +147,119 @@ if __name__ == "__main__":
         output_path = os.path.join("output", f"{filename}.png")
         plt.savefig(output_path, bbox_inches="tight", pad_inches=0.0)
         plt.close()
+
+
+def visualize_detection(image, detections, input_size, classes):
+    """
+    image:
+    detection: rescaled (unpadding) detection
+    classes: 
+    """
+    plt.figure()
+    fig, ax = plt.subplots(1)
+    ax.imshow(image)
+
+    # Bounding-box colors
+    cmap = plt.get_cmap("tab20b")
+    colors = [cmap(i) for i in np.linspace(0, 1, 20)]
+
+    # Draw bounding boxes and labels of detections
+    if detections is not None:
+        # Rescale boxes to original image
+        detections = rescale_boxes(detections, input_size, image.shape[:2])
+        unique_labels = detections[:, -1].cpu().unique()
+        n_cls_preds = len(unique_labels)
+        # bbox_colors = random.sample(colors, n_cls_preds)
+        for x1, y1, x2, y2, conf, cls_conf, cls_pred in detections:
+
+            # print("\t+ Label: %s, Conf: %.5f" % (classes[int(cls_pred)], cls_conf.item()))
+
+            box_w = x2 - x1
+            box_h = y2 - y1
+
+            # color = bbox_colors[int(np.where(unique_labels == int(cls_pred))[0])]
+            # Create a Rectangle patch
+            bbox = patches.Rectangle((x1, y1), box_w, box_h, linewidth=2, edgecolor='m', facecolor="none")
+            # Add the bbox to the plot
+            ax.add_patch(bbox)
+            # Add label
+            plt.text(
+                x1,
+                y1,
+                s=classes[int(cls_pred)],
+                color="white",
+                verticalalignment="top",
+                bbox={"color": 'g', "pad": 0},
+            )
+
+    # Save generated image with detections
+    plt.axis("off")
+    plt.gca().xaxis.set_major_locator(NullLocator())
+    plt.gca().yaxis.set_major_locator(NullLocator())
+    
+    canvas = FigureCanvasAgg(fig)
+    canvas.draw()
+    s, (width, height) = canvas.print_to_buffer()
+    # Option 2a: Convert to a NumPy array.
+    image_detection = np.fromstring(s, np.uint8).reshape((height, width, 4))
+    plt.close()
+
+    return image_detection
+
+
+def visualize_label(image, label, input_size, classes):
+    """
+    image: 
+    label: rescaled (unpadding) label
+    classes: 
+    """
+    plt.figure()
+    fig, ax = plt.subplots(1)
+    ax.imshow(image)
+
+    # Bounding-box colors
+    cmap = plt.get_cmap("tab20b")
+    colors = [cmap(i) for i in np.linspace(0, 1, 20)]
+
+    # Rescale boxes to original image
+    label[:,1:] = rescale_boxes(label[:,1:], input_size, image.shape[:2])
+    unique_labels = label[:, 0].cpu().unique()
+    n_cls_label = len(unique_labels)
+    bbox_colors = random.sample(colors, n_cls_label)
+    for cls_label, x1, y1, x2, y2 in label:
+
+        # print("\t+ Label: %s, Conf: %.5f" % (classes[int(cls_pred)], cls_conf.item()))
+
+        box_w = x2 - x1
+        box_h = y2 - y1
+
+        color = bbox_colors[int(np.where(unique_labels == int(cls_label))[0])]
+        # Create a Rectangle patch
+        bbox = patches.Rectangle((x1, y1), box_w, box_h, linewidth=2, edgecolor=color, facecolor="none")
+        # Add the bbox to the plot
+        ax.add_patch(bbox)
+        # Add label
+        plt.text(
+            x1,
+            y1,
+            s='label: ' + classes[int(cls_label)],
+            color="red",
+            verticalalignment="top",
+            bbox={"color": color, "pad": 0},
+        )
+
+    # Save generated image with detections
+    plt.axis("off")
+    plt.gca().xaxis.set_major_locator(NullLocator())
+    plt.gca().yaxis.set_major_locator(NullLocator())
+    # image_label = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+
+    canvas = FigureCanvasAgg(fig)
+    canvas.draw()
+    s, (width, height) = canvas.print_to_buffer()
+    # Option 2a: Convert to a NumPy array.
+    image_label = np.fromstring(s, np.uint8).reshape((height, width, 4))
+    plt.close()
+
+    return image_label
+

@@ -64,12 +64,19 @@ class ImageFolder(Dataset):
 
 
 class ListDataset(Dataset):
-    def __init__(self, list_path, img_size=416, multiscale=True, transform=None):
-        with open(list_path, "r") as file:
-            self.img_files = file.readlines()
+    def __init__(self, list_path, img_size=416, multiscale=True, transform=None, use_dir=True):
+        """
+        use_dir: if True list_path is the directory of data, else it's the file where all the data path are saved.
+        """
+
+        if use_dir:
+            self.img_files=glob.glob(os.path.join(list_path, '*.jpg'))
+        else:
+            with open(list_path, "r") as file:
+                self.img_files = file.readlines()
 
         self.label_files = [
-            path.replace("images", "labels").replace(".png", ".txt").replace(".jpg", ".txt")
+            path.replace("image", "label_txt").replace(".png", ".txt").replace(".jpg", ".txt")
             for path in self.img_files
         ]
 
