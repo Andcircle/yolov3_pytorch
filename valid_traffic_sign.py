@@ -64,10 +64,6 @@ def evaluate(model, dataloader, iou_thres, conf_thres, nms_thres, img_size, batc
     # cv2.imwrite(output_path, image_label)
     # output_path = os.path.join('output', 'detection_epoch{}_batch{}.jpg'.format(epoch, batch_i))
     # cv2.imwrite(output_path, image_detection)
-
-    # logger.image_summary('ground_truth_img', image_label, batches_done)
-    # logger.image_summary('prediction_img', image_detection, batches_done)
-
     
     # Concatenate sample statistics
     true_positives, pred_scores, pred_labels = [np.concatenate(x, 0) for x in list(zip(*sample_metrics))]

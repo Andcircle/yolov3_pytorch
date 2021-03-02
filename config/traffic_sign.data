@@ -1,4 +1,4 @@
 classes= 83
-train=data/traffic_sign/image_test/train
-valid=data/traffic_sign/image_test/val
+train=data/traffic_sign/image/train
+valid=data/traffic_sign/image/val
 names=data/traffic_sign/traffic_sign.names

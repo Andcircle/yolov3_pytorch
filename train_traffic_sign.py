@@ -51,7 +51,7 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     print(opt)
 
-    logger = Logger(opt.logdir, colab=True)
+    logger = Logger(opt.logdir)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
