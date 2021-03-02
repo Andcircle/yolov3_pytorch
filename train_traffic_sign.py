@@ -35,11 +35,11 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=8, help="size of each image batch")
     parser.add_argument("--gradient_accumulations", type=int, default=2, help="number of gradient accums before step")
     parser.add_argument("--model_def", type=str, default="config/yolov3_traffic_sign.cfg", help="path to model definition file")
-    # parser.add_argument("--model_def", type=str, default="config/yolov3-tiny.cfg", help="path to model definition file")
+    # parser.add_argument("--model_def", type=str, default="config/yolov3-tiny_traffic_sign.cfg", help="path to model definition file")
     parser.add_argument("--data_config", type=str, default="config/traffic_sign.data", help="path to data config file")
     # parser.add_argument("--data_config", type=str, default="config/coco_test.data", help="path to data config file")
     parser.add_argument("--pretrained_weights", type=str, help="if specified starts from checkpoint model")
-    parser.add_argument("--n_cpu", type=int, default=4, help="number of cpu threads to use during batch generation")
+    parser.add_argument("--n_cpu", type=int, default=0, help="number of cpu threads to use during batch generation")
     parser.add_argument("--img_size", type=int, default=416, help="size of each image dimension")
     parser.add_argument("--checkpoint_interval", type=int, default=5, help="interval between saving model weights")
     parser.add_argument("--evaluation_interval", type=int, default=1, help="interval evaluations on validation set")
@@ -214,4 +214,4 @@ if __name__ == "__main__":
             torch.save({'epoch': epoch,
                         'model_state_dict': model.state_dict(),
                         'optimizer_state_dict': optimizer.state_dict(),
-                        'loss': loss}, opt.checkpoints + f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
+                        'loss': loss}, os.path.join(opt.checkpoints, f"yolov3_ckpt_%d.pth" % epoch))
