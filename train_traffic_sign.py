@@ -34,13 +34,12 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=100, help="number of epochs")
     parser.add_argument("--batch_size", type=int, default=8, help="size of each image batch")
     parser.add_argument("--gradient_accumulations", type=int, default=2, help="number of gradient accums before step")
-    parser.add_argument("--model_def", type=str, default="config/yolov3-tiny_traffic_sign.cfg", help="path to model definition file")
+    parser.add_argument("--model_def", type=str, default="config/yolov3_traffic_sign.cfg", help="path to model definition file")
     # parser.add_argument("--model_def", type=str, default="config/yolov3-tiny.cfg", help="path to model definition file")
     parser.add_argument("--data_config", type=str, default="config/traffic_sign.data", help="path to data config file")
     # parser.add_argument("--data_config", type=str, default="config/coco_test.data", help="path to data config file")
-    # parser.add_argument("--pretrained_weights", type=str, default="weights/yolov3-tiny.weights", help="if specified starts from checkpoint model")
     parser.add_argument("--pretrained_weights", type=str, help="if specified starts from checkpoint model")
-    parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
+    parser.add_argument("--n_cpu", type=int, default=4, help="number of cpu threads to use during batch generation")
     parser.add_argument("--img_size", type=int, default=416, help="size of each image dimension")
     parser.add_argument("--checkpoint_interval", type=int, default=5, help="interval between saving model weights")
     parser.add_argument("--evaluation_interval", type=int, default=1, help="interval evaluations on validation set")
@@ -48,16 +47,16 @@ if __name__ == "__main__":
     parser.add_argument("--multiscale_training", default=True, help="allow for multi-scale training")
     parser.add_argument("--verbose", "-v", default=False, action='store_true', help="Makes the training more verbose")
     parser.add_argument("--logdir", type=str, default="logs", help="Defines the directory where the training log files are stored")
+    parser.add_argument("--checkpoints", type=str, default="checkpoints", help="Defines the directory where the checkpoints are saved")
     opt = parser.parse_args()
     print(opt)
 
     logger = Logger(opt.logdir, colab=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # device = torch.device('cpu')
 
     os.makedirs("output", exist_ok=True)
-    os.makedirs("checkpoints", exist_ok=True)
+    # os.makedirs("checkpoints", exist_ok=True)
 
     # Get data configuration
     data_config = parse_data_config(opt.data_config)
@@ -166,30 +165,6 @@ if __name__ == "__main__":
             tensorboard_log += [("train/loss", to_cpu(loss).item())]
             logger.list_of_scalars_summary(tensorboard_log, batches_done)
 
-            # Visualization
-
-            # image = np.array(Image.open(img_paths[0]))
-            # # Extract labels
-            # label = targets[targets[:,0]==0][:,1:]
-            # # Rescale label
-            # label[:, 1:] = xywh2xyxy(label[:, 1:])
-            # label[:, 1:] *= opt.img_size
-
-            # image_label=detect.visualize_label(image, label, opt.img_size, class_names)
-
-            # with torch.no_grad():
-            #     outputs = non_max_suppression(outputs)
-
-            # image_detection=detect.visualize_detection(image, outputs[0], opt.img_size, class_names)
-
-            # output_path = os.path.join('output', 'label_epoch{}_batch{}.jpg'.format(epoch, batch_i))
-            # cv2.imwrite(output_path, image_label)
-            # output_path = os.path.join('output', 'detection_epoch{}_batch{}.jpg'.format(epoch, batch_i))
-            # cv2.imwrite(output_path, image_detection)
-
-            # logger.image_summary('ground_truth_img', image_label, batches_done)
-            # logger.image_summary('prediction_img', image_detection, batches_done)
-
             # Determine approximate time left for epoch
             epoch_batches_left = len(train_dataloader) - (batch_i + 1)
             time_left = datetime.timedelta(seconds=epoch_batches_left * (time.time() - start_time) / (batch_i + 1))
@@ -235,9 +210,8 @@ if __name__ == "__main__":
                 print( "---- mAP not measured (no detections found by model)")
 
         if epoch % opt.checkpoint_interval == 0:
-            # torch.save(model.state_dict(), f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
 
             torch.save({'epoch': epoch,
                         'model_state_dict': model.state_dict(),
                         'optimizer_state_dict': optimizer.state_dict(),
-                        'loss': loss}, f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
+                        'loss': loss}, opt.checkpoints + f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
