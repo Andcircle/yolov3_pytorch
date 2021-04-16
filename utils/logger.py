@@ -23,3 +23,7 @@ class Logger(object):
     def image_summary(self, tag, image, step):
         """Log image variables."""
         self.writer.add_image(tag, image, step, dataformats='HWC')
+
+    def graph_summary(self, model, input_to_model):
+        """Log graph structure, only need call once"""
+        self.writer.add_graph(model, input_to_model)

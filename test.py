@@ -34,8 +34,8 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
         collate_fn=dataset.collate_fn
     )
 
-    # Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
-    Tensor = torch.FloatTensor
+    Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
+    # Tensor = torch.FloatTensor
 
     labels = []
     sample_metrics = []  # List of tuples (TP, confs, pred)

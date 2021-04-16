@@ -63,7 +63,7 @@ def create_modules(module_defs):
 
         elif module_def["type"] == "shortcut":
             filters = output_filters[1:][int(module_def["from"])]
-            modules.add_module(f"shortcut_{module_i}", EmptyLayer())
+            modules.add_module(f"shortcut_{module_i}", shortcutLayer(int(module_def["from"])))
 
         elif module_def["type"] == "yolo":
             anchor_idxs = [int(x) for x in module_def["mask"].split(",")]
@@ -101,6 +101,12 @@ class EmptyLayer(nn.Module):
 
     def __init__(self):
         super(EmptyLayer, self).__init__()
+
+
+class shortcutLayer(nn.Module):
+    def __init__(self,froms):
+        super(shortcutLayer, self).__init__()
+        self.froms = froms
 
 
 class YOLOLayer(nn.Module):
